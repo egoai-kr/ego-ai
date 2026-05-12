@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EGO AI — 나보다 나를 더 잘 아는 AI</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --slate:#1E293B;--slate-mid:#334155;--slate-light:#475569;
+  --ocean:#0EA5E9;--ocean-dark:#0284C7;--ocean-light:#BAE6FD;
+  --bg:#F8FAFC;--white:#FFFFFF;--border:#E2E8F0;
+  --text:#1E293B;--muted:#64748B;
+}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 5%;background:rgba(248,250,252,.85);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;height:62px;}
+.nav-logo{font-size:20px;font-weight:900;background:linear-gradient(135deg,var(--slate),var(--ocean));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.5px;}
+.nav-links{display:flex;align-items:center;gap:28px;}
+.nav-links a{font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;transition:color .2s;}
+.nav-links a:hover{color:var(--text);}
+.nav-cta{padding:8px 18px;background:linear-gradient(135deg,var(--slate),var(--slate-mid));color:#fff;border-radius:20px;font-size:13px;font-weight:600;text-decoration:none;transition:all .2s;box-shadow:0 2px 10px rgba(30,41,59,.2);}
+.nav-cta:hover{transform:translateY(-1px);}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:100px 5% 80px;text-align:center;position:relative;overflow:hidden;}
+.hero-bg{position:absolute;inset:0;background:linear-gradient(160deg,#f0f9ff 0%,#f8fafc 40%,#f1f5f9 100%);z-index:0;}
+.hero-blob{position:absolute;border-radius:50%;filter:blur(80px);opacity:.35;z-index:0;}
+.hero-blob-1{width:600px;height:600px;background:radial-gradient(circle,#BAE6FD,transparent);top:-100px;right:-100px;}
+.hero-blob-2{width:500px;height:500px;background:radial-gradient(circle,#e0f2fe,transparent);bottom:-80px;left:-80px;}
+.hero-inner{position:relative;z-index:1;max-width:760px;}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.25);border-radius:20px;font-size:12px;font-weight:700;color:var(--ocean-dark);margin-bottom:24px;}
+.hero-badge::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--ocean);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+h1{font-size:clamp(36px,6vw,68px);font-weight:900;line-height:1.12;letter-spacing:-1.5px;margin-bottom:20px;color:var(--slate);}
+h1 .accent{background:linear-gradient(135deg,var(--ocean),#38bdf8);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.hero-sub{font-size:clamp(16px,2vw,20px);color:var(--muted);line-height:1.7;max-width:560px;margin:0 auto 40px;}
+.hero-cta-group{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.btn-primary{padding:14px 32px;background:linear-gradient(135deg,var(--slate),var(--slate-mid));color:#fff;border-radius:12px;font-size:15px;font-weight:700;text-decoration:none;cursor:pointer;border:none;transition:all .25s;box-shadow:0 4px 20px rgba(30,41,59,.25);}
+.btn-primary:hover{transform:translateY(-2px);}
+.btn-secondary{padding:14px 32px;background:rgba(14,165,233,.08);border:1.5px solid rgba(14,165,233,.3);color:var(--ocean-dark);border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:all .25s;}
+.btn-secondary:hover{background:rgba(14,165,233,.14);transform:translateY(-2px);}
+.hero-note{margin-top:18px;font-size:12px;color:var(--muted);}
+
+/* PREVIEW */
+.preview{padding:0 5% 100px;display:flex;justify-content:center;}
+.preview-wrap{position:relative;max-width:960px;width:100%;}
+.preview-glow{position:absolute;inset:-30px;background:radial-gradient(ellipse 70% 50% at 50% 50%,rgba(14,165,233,.12),transparent);border-radius:32px;z-index:0;}
+.preview-frame{position:relative;z-index:1;background:var(--white);border:1px solid var(--border);border-radius:20px;box-shadow:0 24px 80px rgba(30,41,59,.14);overflow:hidden;}
+.preview-bar{background:linear-gradient(135deg,#1E293B,#334155);padding:12px 16px;display:flex;align-items:center;gap:8px;}
+.preview-dots{display:flex;gap:6px;}
+.preview-dot{width:10px;height:10px;border-radius:50%;}
+.preview-dot:nth-child(1){background:#EF4444;}
+.preview-dot:nth-child(2){background:#F59E0B;}
+.preview-dot:nth-child(3){background:#10B981;}
+.preview-url{flex:1;background:rgba(255,255,255,.1);border-radius:6px;padding:5px 12px;font-size:11px;color:rgba(255,255,255,.6);text-align:center;}
+.preview-body{display:grid;grid-template-columns:180px 1fr;min-height:380px;}
+.preview-sidebar{background:linear-gradient(180deg,#f8fafc,#e2e8f0,#cbd5e1);padding:14px 10px;border-right:1px solid #E2E8F0;}
+.preview-logo{font-size:14px;font-weight:900;color:#1E293B;margin-bottom:14px;padding:0 6px;}
+.preview-nav-item{padding:7px 8px;border-radius:7px;font-size:11px;display:flex;align-items:center;gap:7px;color:#64748B;margin-bottom:2px;}
+.preview-nav-item.active{background:linear-gradient(135deg,#334155,#1E293B);color:white;}
+.preview-main{padding:16px;background:#F8FAFC;}
+.preview-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;}
+.preview-stat{background:#fff;border:1px solid #E2E8F0;border-radius:9px;padding:10px;font-size:10px;}
+.preview-stat-icon{font-size:14px;margin-bottom:3px;}
+.preview-stat-label{color:#64748B;margin-bottom:2px;}
+.preview-stat-value{font-size:14px;font-weight:800;color:#1E293B;}
+.preview-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.preview-card{background:#fff;border:1px solid #E2E8F0;border-radius:9px;padding:12px;}
+.preview-card-title{font-size:11px;font-weight:700;color:#0EA5E9;margin-bottom:8px;}
+.preview-bar-item{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+.preview-bar-label{font-size:9px;color:#64748B;width:50px;}
+.preview-bar-track{flex:1;height:4px;background:#F1F5F9;border-radius:2px;}
+.preview-bar-fill{height:100%;border-radius:2px;}
+.preview-insight{background:rgba(51,65,85,.07);border-radius:7px;padding:8px;margin-bottom:6px;}
+.preview-insight-label{font-size:9px;font-weight:700;color:#334155;margin-bottom:3px;}
+.preview-insight-text{font-size:9px;color:#475569;line-height:1.5;}
+
+/* APP MODAL */
+.app-modal-overlay{display:none;position:fixed;inset:0;z-index:300;background:rgba(15,23,42,.75);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px;}
+.app-modal-overlay.open{display:flex;}
+.app-modal{background:#fff;border-radius:20px;width:100%;max-width:1100px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 32px 100px rgba(0,0,0,.35);}
+.app-modal-header{padding:12px 20px;background:linear-gradient(135deg,#1E293B,#334155);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.app-modal-title{color:white;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.app-modal-close{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:white;font-size:16px;cursor:pointer;transition:background .2s;}
+.app-modal-close:hover{background:rgba(255,255,255,.28);}
+.app-modal-content{flex:1;overflow:auto;}
+
+/* BETA MODAL */
+.beta-modal-overlay{display:none;position:fixed;inset:0;z-index:300;background:rgba(15,23,42,.7);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px;}
+.beta-modal-overlay.open{display:flex;}
+.beta-modal{background:#fff;border-radius:24px;width:100%;max-width:540px;overflow:hidden;box-shadow:0 32px 100px rgba(0,0,0,.25);position:relative;}
+.beta-modal-hero{background:linear-gradient(135deg,#1E293B,#334155);padding:32px 32px 28px;position:relative;overflow:hidden;}
+.beta-modal-hero::after{content:'🧠';position:absolute;right:24px;top:50%;transform:translateY(-50%);font-size:72px;opacity:.12;}
+.beta-modal-hero h3{color:white;font-size:22px;font-weight:900;letter-spacing:-.5px;margin-bottom:8px;}
+.beta-modal-hero p{color:#94A3B8;font-size:13px;line-height:1.6;}
+.beta-modal-body{padding:28px 32px 32px;}
+.form-group{margin-bottom:18px;}
+.form-label{display:block;font-size:12px;font-weight:700;color:var(--slate);margin-bottom:7px;}
+.form-label span{color:#EF4444;margin-left:2px;}
+.form-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--text);background:#fff;outline:none;transition:border-color .2s;font-family:inherit;}
+.form-input:focus{border-color:var(--slate-mid);}
+.form-options{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.form-option{padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s;text-align:center;user-select:none;}
+.form-option:hover{border-color:var(--slate-mid);color:var(--slate);}
+.form-option.selected{border-color:var(--slate-mid);background:rgba(51,65,85,.08);color:var(--slate);font-weight:700;}
+.form-option.multi.selected{border-color:var(--ocean-dark);background:rgba(14,165,233,.07);color:var(--ocean-dark);}
+.form-divider{height:1px;background:var(--border);margin:20px 0;}
+.submit-btn{width:100%;padding:14px;background:linear-gradient(135deg,#1E293B,#334155);color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:all .25s;}
+.submit-btn:hover{transform:translateY(-1px);}
+.modal-close-x{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:white;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.success-panel{display:none;padding:40px 32px;text-align:center;}
+.success-panel.show{display:block;}
+.success-icon{font-size:56px;margin-bottom:16px;}
+.success-panel h4{font-size:20px;font-weight:900;margin-bottom:8px;}
+.success-panel p{font-size:13px;color:var(--muted);line-height:1.7;}
+
+/* SECTIONS */
+.section{padding:100px 5%;}
+.section-center{text-align:center;}
+.section-badge{display:inline-block;padding:5px 13px;background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.2);border-radius:20px;font-size:12px;font-weight:700;color:var(--ocean-dark);margin-bottom:16px;}
+h2{font-size:clamp(28px,4vw,44px);font-weight:900;letter-spacing:-1px;line-height:1.2;margin-bottom:16px;}
+.section-sub{font-size:16px;color:var(--muted);line-height:1.7;max-width:540px;margin:0 auto 56px;}
+.pain-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;max-width:900px;margin:0 auto;}
+.pain-card{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:28px;position:relative;overflow:hidden;transition:all .25s;}
+.pain-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(30,41,59,.1);}
+.pain-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#EF4444,#F59E0B);}
+.pain-num{font-size:36px;font-weight:900;color:#F1F5F9;margin-bottom:12px;}
+.pain-title{font-size:16px;font-weight:700;margin-bottom:8px;}
+.pain-desc{font-size:13.5px;color:var(--muted);line-height:1.7;}
+.pain-quote{margin-top:14px;padding:10px 14px;background:#FFF7ED;border-left:3px solid #F59E0B;border-radius:0 8px 8px 0;font-size:12px;color:#92400E;font-style:italic;line-height:1.6;}
+.features-bg{background:linear-gradient(160deg,#0f172a 0%,#1e293b 60%,#0c1a2e 100%);}
+.features-bg h2,.features-bg .section-badge{color:white;}
+.features-bg .section-badge{background:rgba(14,165,233,.15);border-color:rgba(14,165,233,.3);color:var(--ocean-light);}
+.features-bg .section-sub{color:#94A3B8;}
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:960px;margin:0 auto;}
+.feature-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:32px 28px;transition:all .3s;}
+.feature-card:hover{border-color:rgba(14,165,233,.3);transform:translateY(-4px);}
+.feature-icon{width:48px;height:48px;border-radius:14px;background:rgba(14,165,233,.12);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:18px;border:1px solid rgba(14,165,233,.2);}
+.feature-title{font-size:18px;font-weight:800;color:white;margin-bottom:10px;}
+.feature-desc{font-size:13.5px;color:#94A3B8;line-height:1.75;}
+.feature-tag{display:inline-block;margin-top:14px;padding:4px 10px;background:rgba(14,165,233,.12);border-radius:20px;font-size:11px;font-weight:700;color:var(--ocean-light);}
+.compare-wrap{max-width:800px;margin:0 auto;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;background:var(--white);border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(30,41,59,.08);}
+th{padding:16px 20px;font-size:13px;font-weight:700;text-align:center;border-bottom:2px solid var(--border);}
+th:first-child{text-align:left;}
+th.ego{background:linear-gradient(135deg,#1E293B,#334155);color:white;}
+td{padding:14px 20px;font-size:13px;border-bottom:1px solid var(--border);text-align:center;}
+td:first-child{text-align:left;font-weight:600;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#F8FAFC;}
+.check{color:#10B981;font-size:16px;font-weight:700;}
+.cross{color:#CBD5E1;font-size:16px;}
+td.ego-cell{background:rgba(14,165,233,.04);font-weight:600;color:var(--ocean-dark);}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;max-width:900px;margin:0 auto;position:relative;}
+.steps::before{content:'';position:absolute;top:36px;left:10%;right:10%;height:2px;background:linear-gradient(90deg,var(--ocean-light),var(--ocean),var(--ocean-light));z-index:0;}
+.step{text-align:center;padding:0 20px;position:relative;z-index:1;}
+.step-num{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--slate),var(--slate-mid));color:white;font-size:24px;font-weight:900;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;box-shadow:0 4px 20px rgba(30,41,59,.25);border:3px solid var(--bg);}
+.step-title{font-size:15px;font-weight:700;margin-bottom:8px;}
+.step-desc{font-size:13px;color:var(--muted);line-height:1.65;}
+.fade-up{opacity:0;transform:translateY(28px);transition:opacity .65s ease,transform .65s ease;}
+.fade-up.visible{opacity:1;transform:translateY(0);}
+footer{padding:40px 5%;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;background:var(--white);}
+.footer-logo{font-size:16px;font-weight:900;background:linear-gradient(135deg,var(--slate),var(--ocean));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.footer-copy{font-size:12px;color:var(--muted);}
+.footer-links{display:flex;gap:20px;}
+.footer-links a{font-size:12px;color:var(--muted);text-decoration:none;}
+
+/* APP 목업 내장 스타일 */
+.app-wrap{display:flex;height:100%;min-height:75vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+.app-sidebar{width:200px;background:linear-gradient(180deg,#f8fafc,#e2e8f0,#cbd5e1);border-right:1px solid #E2E8F0;display:flex;flex-direction:column;flex-shrink:0;}
+.app-sidebar-header{padding:14px 12px;border-bottom:1px solid rgba(51,65,85,.1);}
+.app-sidebar-logo{font-size:18px;font-weight:800;color:#1E293B;}
+.app-sidebar-user{font-size:11px;color:#64748B;margin-top:4px;}
+.app-nav{flex:1;padding:8px 5px;overflow-y:auto;}
+.app-nav-label{font-size:9px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.8px;padding:6px 8px 3px;}
+.app-nav-item{padding:7px 8px;border-radius:7px;cursor:pointer;display:flex;align-items:center;gap:7px;color:#64748B;font-size:12px;margin-bottom:1px;transition:all .15s;}
+.app-nav-item:hover{background:rgba(255,255,255,.6);color:#1E293B;}
+.app-nav-item.active{background:linear-gradient(135deg,rgba(51,65,85,.85),rgba(30,41,59,.9));color:white;}
+.app-main{flex:1;display:flex;flex-direction:column;background:#F8FAFC;overflow:hidden;}
+.app-main-header{padding:10px 16px;border-bottom:1px solid #E2E8F0;background:white;display:flex;justify-content:space-between;align-items:center;}
+.app-main-title{font-size:14px;font-weight:700;color:#1E293B;}
+.app-main-sub{font-size:10px;color:#64748B;}
+.app-content{flex:1;overflow-y:auto;padding:14px;}
+.app-view{display:none;}
+.app-view.active{display:block;}
+
+/* 대시보드 */
+.dash-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;}
+.dash-stat{background:white;border:1px solid #E2E8F0;border-radius:10px;padding:10px 12px;}
+.dash-stat-icon{font-size:16px;margin-bottom:3px;}
+.dash-stat-label{font-size:9px;color:#64748B;}
+.dash-stat-value{font-size:16px;font-weight:800;color:#1E293B;}
+.dash-stat-sub{font-size:9px;margin-top:2px;}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr 200px;gap:10px;}
+.app-panel{background:white;border:1px solid #E2E8F0;border-radius:10px;padding:12px;}
+.app-panel-title{font-size:11px;font-weight:700;color:#1E293B;margin-bottom:8px;display:flex;justify-content:space-between;}
+.app-panel-link{font-size:10px;color:#0EA5E9;cursor:pointer;}
+.sch-item{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #F1F5F9;}
+.sch-item:last-child{border:none;}
+.sch-dot{width:7px;height:7px;border-radius:50%;margin-top:3px;flex-shrink:0;}
+.sch-title{font-size:11px;font-weight:600;}
+.sch-tag{font-size:9px;color:#64748B;}
+.todo-item-m{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid #F1F5F9;}
+.todo-item-m:last-child{border:none;}
+.todo-check-m{width:14px;height:14px;border:2px solid #E2E8F0;border-radius:50%;flex-shrink:0;}
+.todo-check-m.done{background:#10B981;border-color:#10B981;}
+.todo-text-m{font-size:11px;font-weight:500;flex:1;}
+.insight-m{background:rgba(51,65,85,.06);border-radius:7px;padding:8px;margin-bottom:6px;}
+.insight-m-label{font-size:9px;font-weight:700;color:#334155;margin-bottom:3px;}
+.insight-m-text{font-size:10px;color:#475569;line-height:1.5;}
+.life-row-m{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #F1F5F9;}
+.life-row-m:last-child{border:none;}
+.life-label-m{font-size:10px;color:#64748B;}
+.life-val-m{font-size:11px;font-weight:700;}
+.life-bar-w{width:50px;height:4px;background:#F1F5F9;border-radius:2px;overflow:hidden;}
+.life-bar-f{height:100%;border-radius:2px;}
+
+/* 채팅 */
+.chat-wrap{display:flex;flex-direction:column;height:100%;}
+.chat-msgs{flex:1;overflow-y:auto;padding:10px 0;}
+.chat-msg{margin-bottom:14px;}
+.chat-msg-role{font-size:10px;font-weight:700;margin-bottom:4px;}
+.chat-msg.user .chat-msg-role{color:#334155;}
+.chat-msg.ai .chat-msg-role{color:#64748B;}
+.chat-msg-content{padding:10px 12px;border-radius:10px;font-size:12px;line-height:1.6;background:white;border:1px solid #E2E8F0;}
+.chat-msg.user .chat-msg-content{background:linear-gradient(135deg,#334155,#1E293B);color:white;border:none;}
+.chat-input-area{border-top:1px solid #E2E8F0;padding:10px 0 0;}
+.chat-input-box-m{background:white;border:1px solid #E2E8F0;border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:8px;}
+.chat-input-m{flex:1;border:none;background:transparent;font-size:12px;outline:none;font-family:inherit;}
+.chat-send-m{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#334155,#1E293B);color:white;border:none;cursor:pointer;font-size:12px;}
+
+@media(max-width:640px){
+  .preview-body{grid-template-columns:1fr;}
+  .preview-sidebar{display:none;}
+  .steps::before{display:none;}
+  nav .nav-links{display:none;}
+  .app-sidebar{display:none;}
+  .dash-stats{grid-template-columns:1fr 1fr;}
+  .dash-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- APP MODAL -->
+<div class="app-modal-overlay" id="appModal">
+  <div class="app-modal">
+    <div class="app-modal-header">
+      <div class="app-modal-title">🧠 EGO AI — 직접 체험해보기</div>
+      <button class="app-modal-close" onclick="closeAppModal()">✕</button>
+    </div>
+    <div class="app-modal-content">
+      <div class="app-wrap">
+        <!-- 사이드바 -->
+        <div class="app-sidebar">
+          <div class="app-sidebar-header">
+            <div class="app-sidebar-logo">🧠 Ego</div>
+            <div class="app-sidebar-user">김지수 · 마케팅 취준</div>
+          </div>
+          <div class="app-nav">
+            <div class="app-nav-label">메인</div>
+            <div class="app-nav-item active" onclick="switchAppView('dashboard',this)">🏠 오늘 한눈에</div>
+            <div class="app-nav-item" onclick="switchAppView('chat',this)">💬 대화</div>
+            <div class="app-nav-label">기록</div>
+            <div class="app-nav-item" onclick="switchAppView('diary',this)">📔 일기</div>
+            <div class="app-nav-item" onclick="switchAppView('todos',this)">✅ 할일</div>
+            <div class="app-nav-label">분석</div>
+            <div class="app-nav-item" onclick="switchAppView('analytics',this)">📊 인사이트</div>
+            <div class="app-nav-item" onclick="switchAppView('lifedata',this)">💚 라이프 데이터</div>
+          </div>
+        </div>
+        <!-- 메인 -->
+        <div class="app-main">
+          <div class="app-main-header">
+            <div>
+              <div class="app-main-title" id="appTitle">오늘 한눈에</div>
+              <div class="app-main-sub" id="appSub">2026년 4월 30일 · 모든 기록이 한 화면에</div>
+            </div>
+          </div>
+          <div class="app-content">
+
+            <!-- 대시보드 -->
+            <div class="app-view active" id="app-dashboard">
+              <div class="dash-stats">
+                <div class="dash-stat"><div class="dash-stat-icon">📔</div><div class="dash-stat-label">이번달 일기</div><div class="dash-stat-value">12</div><div class="dash-stat-sub" style="color:#10B981">▲ 연속 23일째</div></div>
+                <div class="dash-stat"><div class="dash-stat-icon">✅</div><div class="dash-stat-label">오늘 할일</div><div class="dash-stat-value">2/8</div><div class="dash-stat-sub" style="color:#EF4444">6개 남음</div></div>
+                <div class="dash-stat"><div class="dash-stat-icon">📱</div><div class="dash-stat-label">스마트폰</div><div class="dash-stat-value">4h 32m</div><div class="dash-stat-sub" style="color:#EF4444">▼ -28분</div></div>
+                <div class="dash-stat"><div class="dash-stat-icon">😊</div><div class="dash-stat-label">오늘 감정</div><div class="dash-stat-value">🥺</div><div class="dash-stat-sub" style="color:#64748B">인턴 발표 D-3</div></div>
+              </div>
+              <div class="dash-grid">
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                  <div class="app-panel">
+                    <div class="app-panel-title">📅 오늘 일정<span class="app-panel-link">전체 보기</span></div>
+                    <div class="sch-item"><div class="sch-dot" style="background:#334155"></div><div><div class="sch-title">카페 알바</div><div class="sch-tag">10:00 - 16:00</div></div></div>
+                    <div class="sch-item"><div class="sch-dot" style="background:#10B981"></div><div><div class="sch-title">공모전 팀 미팅</div><div class="sch-tag">19:00 · 제일기획</div></div></div>
+                  </div>
+                  <div class="app-panel">
+                    <div class="app-panel-title">✅ 오늘 할일<span class="app-panel-link">전체 보기</span></div>
+                    <div class="todo-item-m"><div class="todo-check-m"></div><div class="todo-text-m">○○기획 인턴 최종 발표 준비</div></div>
+                    <div class="todo-item-m"><div class="todo-check-m"></div><div class="todo-text-m">제일기획 공모전 1차 제출</div></div>
+                    <div class="todo-item-m"><div class="todo-check-m done"></div><div class="todo-text-m" style="text-decoration:line-through;color:#94A3B8">GAIQ 자격증 취득</div></div>
+                  </div>
+                </div>
+                <div class="app-panel">
+                  <div class="app-panel-title">🧠 AI 인사이트<span class="app-panel-link">전체 보기</span></div>
+                  <div class="insight-m"><div class="insight-m-label">💡 심리학적 통찰</div><div class="insight-m-text">최근 2주 "조급함" 키워드 38% 증가. 동기 비교 사고가 강해진 신호예요.</div></div>
+                  <div class="insight-m"><div class="insight-m-label">🎯 행동 패턴</div><div class="insight-m-text">스마트폰 5시간+ 다음날 "번아웃" 76% 등장. 오늘 사용시간에 주의하세요!</div></div>
+                  <div class="insight-m"><div class="insight-m-label">📔 오늘의 일기</div><div class="insight-m-text" style="font-weight:600">인턴 발표 D-3, 떨린다<br><span style="font-weight:400">자기소개서를 7번이나 다시 썼는데도 부족한 느낌...</span></div></div>
+                </div>
+                <div class="app-panel">
+                  <div class="app-panel-title">💚 라이프 데이터</div>
+                  <div class="life-row-m"><div class="life-label-m">📱 스마트폰</div><div style="display:flex;align-items:center;gap:6px"><div class="life-val-m">4h 32m</div><div class="life-bar-w"><div class="life-bar-f" style="width:57%;background:#334155"></div></div></div></div>
+                  <div class="life-row-m"><div class="life-label-m">📷 인스타</div><div style="display:flex;align-items:center;gap:6px"><div class="life-val-m">1h 24m</div><div class="life-bar-w"><div class="life-bar-f" style="width:47%;background:#EC4899"></div></div></div></div>
+                  <div class="life-row-m"><div class="life-label-m">📺 유튜브</div><div style="display:flex;align-items:center;gap:6px"><div class="life-val-m">58m</div><div class="life-bar-w"><div class="life-bar-f" style="width:32%;background:#EF4444"></div></div></div></div>
+                  <div style="margin-top:10px;padding-top:10px;border-top:1px solid #F1F5F9;">
+                    <div style="font-size:10px;font-weight:700;margin-bottom:6px;">💰 오늘 지출</div>
+                    <div class="life-row-m"><div class="life-label-m">☕ 카페·식비</div><div class="life-val-m">₩12,500</div></div>
+                    <div class="life-row-m"><div class="life-label-m">🚇 교통비</div><div class="life-val-m">₩5,900</div></div>
+                    <div style="text-align:right;font-size:11px;font-weight:700;color:#334155;margin-top:4px;">합계 ₩23,400</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 채팅 -->
+            <div class="app-view" id="app-chat">
+              <div class="chat-wrap">
+                <div class="chat-msgs" id="appChatMsgs">
+                  <div class="chat-msg ai"><div class="chat-msg-role">🧠 Ego AI</div><div class="chat-msg-content">안녕하세요 지수님! 일기 12개, 할일 8개를 모두 기억하고 있어요. 무엇이든 물어보세요!</div></div>
+                </div>
+                <div class="chat-input-area">
+                  <div class="chat-input-box-m">
+                    <input class="chat-input-m" id="appChatInput" placeholder="무엇이든 물어보세요..." onkeydown="if(event.key==='Enter')sendAppChat()">
+                    <button class="chat-send-m" onclick="sendAppChat()">↑</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 일기 -->
+            <div class="app-view" id="app-diary">
+              <div style="display:grid;grid-template-columns:200px 1fr;gap:10px;height:100%;">
+                <div style="background:white;border:1px solid #E2E8F0;border-radius:10px;padding:10px;overflow-y:auto;">
+                  <div style="font-size:10px;font-weight:700;color:#64748B;margin-bottom:8px;">최근 일기</div>
+                  <div style="padding:8px;background:#F1F5F9;border-radius:7px;margin-bottom:5px;cursor:pointer;">
+                    <div style="font-size:9px;color:#64748B;">🥺 2026-04-29</div>
+                    <div style="font-size:11px;font-weight:700;margin:2px 0;">인턴 발표 D-3, 떨린다</div>
+                    <div style="font-size:10px;color:#64748B;">자기소개서를 7번이나...</div>
+                  </div>
+                  <div style="padding:8px;border-radius:7px;margin-bottom:5px;cursor:pointer;border:1px solid #E2E8F0;">
+                    <div style="font-size:9px;color:#64748B;">😔 2026-04-27</div>
+                    <div style="font-size:11px;font-weight:700;margin:2px 0;">동기 합격 소식</div>
+                    <div style="font-size:10px;color:#64748B;">마음이 복잡하다...</div>
+                  </div>
+                  <div style="padding:8px;border-radius:7px;margin-bottom:5px;cursor:pointer;border:1px solid #E2E8F0;">
+                    <div style="font-size:9px;color:#64748B;">😊 2026-04-25</div>
+                    <div style="font-size:11px;font-weight:700;margin:2px 0;">공모전 아이디어 채택!</div>
+                    <div style="font-size:10px;color:#64748B;">오늘 처음으로 심리학...</div>
+                  </div>
+                </div>
+                <div style="background:white;border:1px solid #E2E8F0;border-radius:10px;padding:16px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <input style="border:none;font-size:16px;font-weight:700;outline:none;flex:1;" value="인턴 발표 D-3, 떨린다">
+                    <div style="display:flex;gap:4px;font-size:18px;">😊😐😔😤🥺</div>
+                  </div>
+                  <div style="font-size:11px;color:#64748B;margin-bottom:12px;">2026-04-29 · #취준 #불안 #자기성찰</div>
+                  <div style="font-size:13px;line-height:1.75;color:#334155;">드디어 ○○기획 마케팅 인턴 최종 발표가 3일 남았다. 자기소개서를 7번이나 다시 썼는데도 부족한 느낌. 심리학과라는 게 마케팅 직군에서 메리트일까, 아니면 변명일까.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 할일 -->
+            <div class="app-view" id="app-todos">
+              <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+                <div style="padding:5px 11px;background:linear-gradient(135deg,#334155,#1E293B);color:white;border-radius:14px;font-size:11px;font-weight:600;">전체</div>
+                <div style="padding:5px 11px;border:1px solid #E2E8F0;border-radius:14px;font-size:11px;color:#64748B;">진행중</div>
+                <div style="padding:5px 11px;border:1px solid #E2E8F0;border-radius:14px;font-size:11px;color:#64748B;">완료</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:7px;">
+                <div style="display:flex;align-items:center;gap:10px;padding:12px;background:white;border:1px solid #E2E8F0;border-radius:9px;"><div style="width:16px;height:16px;border:2px solid #E2E8F0;border-radius:50%;flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:12px;font-weight:600;">○○기획 인턴 최종 발표 준비</div><div style="font-size:10px;color:#64748B;margin-top:2px;"><span style="background:#FEE2E2;color:#DC2626;padding:1px 6px;border-radius:6px;font-weight:600;">높음</span> · 📅 2026-05-02</div></div></div>
+                <div style="display:flex;align-items:center;gap:10px;padding:12px;background:white;border:1px solid #E2E8F0;border-radius:9px;"><div style="width:16px;height:16px;border:2px solid #E2E8F0;border-radius:50%;flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:12px;font-weight:600;">제일기획 공모전 1차 제출</div><div style="font-size:10px;color:#64748B;margin-top:2px;"><span style="background:#FEE2E2;color:#DC2626;padding:1px 6px;border-radius:6px;font-weight:600;">높음</span> · 📅 2026-05-10</div></div></div>
+                <div style="display:flex;align-items:center;gap:10px;padding:12px;background:white;border:1px solid #E2E8F0;border-radius:9px;"><div style="width:16px;height:16px;border:2px solid #E2E8F0;border-radius:50%;flex-shrink:0;"></div><div style="flex:1;"><div style="font-size:12px;font-weight:600;">검색광고마케터 1급 시험 등록</div><div style="font-size:10px;color:#64748B;margin-top:2px;"><span style="background:#FEF3C7;color:#D97706;padding:1px 6px;border-radius:6px;font-weight:600;">보통</span> · 📅 2026-05-05</div></div></div>
+                <div style="display:flex;align-items:center;gap:10px;padding:12px;background:white;border:1px solid #E2E8F0;border-radius:9px;opacity:.5;"><div style="width:16px;height:16px;background:#10B981;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;color:white;">✓</div><div style="flex:1;"><div style="font-size:12px;font-weight:600;text-decoration:line-through;color:#94A3B8;">GAIQ 자격증 취득</div><div style="font-size:10px;color:#94A3B8;margin-top:2px;">완료 · 2026-04-18</div></div></div>
+              </div>
+            </div>
+
+            <!-- 인사이트 -->
+            <div class="app-view" id="app-analytics">
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">
+                <div class="dash-stat"><div class="dash-stat-label">이번 달 일기</div><div class="dash-stat-value">12</div><div class="dash-stat-sub" style="color:#10B981">▲ +3</div></div>
+                <div class="dash-stat"><div class="dash-stat-label">평균 감정</div><div class="dash-stat-value">3.2/5</div><div class="dash-stat-sub" style="color:#EF4444">▼ -0.4</div></div>
+                <div class="dash-stat"><div class="dash-stat-label">완료 할일</div><div class="dash-stat-value">14</div><div class="dash-stat-sub" style="color:#10B981">▲ +6</div></div>
+                <div class="dash-stat"><div class="dash-stat-label">연속 기록</div><div class="dash-stat-value">23일</div><div class="dash-stat-sub" style="color:#F59E0B">🔥 신기록!</div></div>
+              </div>
+              <div class="app-panel" style="margin-bottom:10px;">
+                <div class="app-panel-title">🧠 AI 인사이트</div>
+                <div class="insight-m"><div class="insight-m-label">💡 심리학적 통찰</div><div class="insight-m-text">최근 2주간 "조급함"과 "자존감" 키워드가 38% 증가했습니다. 동기와의 비교에서 오는 압박감이 주된 원인으로 보여요.</div></div>
+                <div class="insight-m"><div class="insight-m-label">🎯 행동 패턴 발견</div><div class="insight-m-text">스마트폰 5시간+ 사용일 다음날 "번아웃" 표현이 76% 확률로 등장합니다.</div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div class="app-panel"><div class="app-panel-title">😊 감정 추이 (30일)</div><div style="height:120px;position:relative;"><canvas id="inlineMoodChart"></canvas></div></div>
+                <div class="app-panel"><div class="app-panel-title">📝 주별 일기 작성량</div><div style="height:120px;position:relative;"><canvas id="inlineEntryChart"></canvas></div></div>
+              </div>
+            </div>
+
+            <!-- 라이프 데이터 -->
+            <div class="app-view" id="app-lifedata">
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;">
+                <div class="dash-stat"><div class="dash-stat-label">📱 스마트폰</div><div class="dash-stat-value">4h 32m</div><div class="dash-stat-sub" style="color:#EF4444">▼ -28분</div></div>
+                <div class="dash-stat"><div class="dash-stat-label">💰 오늘 지출</div><div class="dash-stat-value">₩23,400</div><div class="dash-stat-sub" style="color:#EF4444">▲ +5,200</div></div>
+                <div class="dash-stat"><div class="dash-stat-label">🏃 이번주 운동</div><div class="dash-stat-value">3회</div><div class="dash-stat-sub" style="color:#10B981">목표 달성!</div></div>
+                <div class="dash-stat"><div class="dash-stat-label">😴 수면</div><div class="dash-stat-value">6h 40m</div><div class="dash-stat-sub" style="color:#EF4444">권장보다 부족</div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div class="app-panel"><div class="app-panel-title">📱 스마트폰 사용 (주간)</div><div style="height:120px;position:relative;"><canvas id="inlinePhoneChart"></canvas></div></div>
+                <div class="app-panel"><div class="app-panel-title">📲 앱별 사용시간</div>
+                  <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:11px;"><span>📷 인스타그램</span><span style="font-weight:700;">1시간 24분</span></div>
+                  <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:11px;"><span>📺 유튜브</span><span style="font-weight:700;">58분</span></div>
+                  <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F1F5F9;font-size:11px;"><span>📚 노션</span><span style="font-weight:700;">45분</span></div>
+                  <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px;"><span>💬 카카오톡</span><span style="font-weight:700;">32분</span></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BETA MODAL -->
+<div class="beta-modal-overlay" id="betaModal">
+  <div class="beta-modal">
+    <button class="modal-close-x" onclick="closeBetaModal()">✕</button>
+    <div class="beta-modal-hero">
+      <h3>베타 신청하기 🚀</h3>
+      <p>출시 즉시 초대장을 보내드려요.<br>베타 사용자에게는 1년 무료 이용 혜택을 드립니다.</p>
+    </div>
+    <div class="beta-modal-body" id="betaForm">
+      <div class="form-group">
+        <label class="form-label">이름 <span>*</span></label>
+        <input class="form-input" id="f-name" type="text" placeholder="홍길동">
+      </div>
+      <div class="form-group">
+        <label class="form-label">이메일 <span>*</span></label>
+        <input class="form-input" id="f-email" type="email" placeholder="hello@example.com">
+      </div>
+      <div class="form-divider"></div>
+      <div class="form-group">
+        <label class="form-label">현재 상황이 어떻게 되세요?</label>
+        <div class="form-options" id="situation">
+          <div class="form-option" data-val="취준생">🎯 취업 준비 중</div>
+          <div class="form-option" data-val="대학생">📚 대학생</div>
+          <div class="form-option" data-val="직장인">💼 직장인</div>
+          <div class="form-option" data-val="기타">✨ 기타</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">AI 쓸 때 가장 불편한 점이 뭐예요? <span style="color:var(--muted);font-weight:400">(여러 개 선택 가능)</span></label>
+        <div class="form-options" id="painpoint">
+          <div class="form-option multi" data-val="매번 설명 반복">🔄 매번 나를 설명해야 해요</div>
+          <div class="form-option multi" data-val="맥락 단절">🔀 모델 바꾸면 맥락이 끊겨요</div>
+          <div class="form-option multi" data-val="기록 연동 안됨">🔗 기록이랑 연동이 안 돼요</div>
+          <div class="form-option multi" data-val="기타">🤔 기타</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">가장 기대되는 기능은요? <span style="color:var(--muted);font-weight:400">(여러 개 선택 가능)</span></label>
+        <div class="form-options" id="feature">
+          <div class="form-option multi" data-val="AI 대화">💬 AI 대화</div>
+          <div class="form-option multi" data-val="감정 분석">😊 감정 분석</div>
+          <div class="form-option multi" data-val="일정·할일">📅 일정·할일</div>
+          <div class="form-option multi" data-val="라이프 데이터">💚 라이프 데이터</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">지금 어떤 앱으로 기록하세요?</label>
+        <div class="form-options" id="currentApp" style="grid-template-columns:1fr 1fr 1fr;">
+          <div class="form-option" data-val="노션">노션</div>
+          <div class="form-option" data-val="다이어리 앱">다이어리 앱</div>
+          <div class="form-option" data-val="메모 앱">메모 앱</div>
+          <div class="form-option" data-val="종이 다이어리">종이 다이어리</div>
+          <div class="form-option" data-val="안 함">안 함</div>
+          <div class="form-option" data-val="기타">기타</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">어디서 알게 되셨어요?</label>
+        <div class="form-options" id="source" style="grid-template-columns:1fr 1fr 1fr;">
+          <div class="form-option" data-val="인스타·SNS">인스타·SNS</div>
+          <div class="form-option" data-val="지인 추천">지인 추천</div>
+          <div class="form-option" data-val="검색">검색</div>
+          <div class="form-option" data-val="커뮤니티">커뮤니티</div>
+          <div class="form-option" data-val="유튜브">유튜브</div>
+          <div class="form-option" data-val="기타">기타</div>
+        </div>
+      </div>
+      <button class="submit-btn" onclick="submitBeta()">베타 신청 완료하기 →</button>
+      <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:12px;">🔒 스팸 없음 · 언제든 취소 가능</p>
+    </div>
+    <div class="success-panel" id="successPanel">
+      <div class="success-icon">🎉</div>
+      <h4>신청 완료!</h4>
+      <p>출시 즉시 <strong id="confirmedEmail"></strong>으로<br>초대장을 보내드릴게요.<br><br>베타 사용자 혜택 — <strong>1년 무료 이용</strong>을 놓치지 마세요!</p>
+      <button class="submit-btn" style="margin-top:24px;" onclick="closeBetaModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">🧠 EGO AI</div>
+  <div class="nav-links">
+    <a href="#features">기능</a>
+    <a href="#compare">비교</a>
+    <a href="#how">사용법</a>
+    <a href="#" class="nav-cta" onclick="openBetaModal(event)">베타 신청 →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-blob hero-blob-1"></div>
+  <div class="hero-blob hero-blob-2"></div>
+  <div class="hero-inner fade-up">
+    <div class="hero-badge">🚀 베타 출시 예정</div>
+    <h1>나보다 나를<br>더 잘 아는 <span class="accent">AI</span></h1>
+    <p class="hero-sub">매번 "저는 이런 사람이에요"를 설명하지 않아도 돼요.<br>EGO AI는 당신의 일기·일정·할 일을 기억하고, 어떤 AI 모델이든 같은 맥락으로 대화합니다.</p>
+    <div class="hero-cta-group">
+      <button class="btn-primary" onclick="openBetaModal()">베타 신청하기 →</button>
+      <button class="btn-secondary" onclick="openAppModal()">기능 살펴보기</button>
+    </div>
+    <p class="hero-note">🔒 데이터는 온전히 당신 것입니다</p>
+  </div>
+</section>
+
+<!-- PREVIEW -->
+<section class="preview">
+  <div class="preview-wrap fade-up">
+    <div class="preview-glow"></div>
+    <div class="preview-frame">
+      <div class="preview-bar">
+        <div class="preview-dots"><div class="preview-dot"></div><div class="preview-dot"></div><div class="preview-dot"></div></div>
+        <div class="preview-url">app.ego-ai.com</div>
+      </div>
+      <div class="preview-body">
+        <div class="preview-sidebar">
+          <div class="preview-logo">🧠 EGO</div>
+          <div class="preview-nav-item active">🏠 오늘 한눈에</div>
+          <div class="preview-nav-item">💬 대화</div>
+          <div class="preview-nav-item">📔 일기</div>
+          <div class="preview-nav-item">📅 캘린더</div>
+          <div class="preview-nav-item">✅ 할일</div>
+          <div class="preview-nav-item">📊 인사이트</div>
+        </div>
+        <div class="preview-main">
+          <div style="font-size:11px;font-weight:700;color:#0EA5E9;margin-bottom:10px;">오늘 한눈에</div>
+          <div class="preview-grid">
+            <div class="preview-stat"><div class="preview-stat-icon">📔</div><div class="preview-stat-label">이번달 일기</div><div class="preview-stat-value">12</div></div>
+            <div class="preview-stat"><div class="preview-stat-icon">✅</div><div class="preview-stat-label">오늘 할일</div><div class="preview-stat-value">2/8</div></div>
+            <div class="preview-stat"><div class="preview-stat-icon">😊</div><div class="preview-stat-label">오늘 감정</div><div class="preview-stat-value">🥺</div></div>
+          </div>
+          <div class="preview-cards">
+            <div class="preview-card">
+              <div class="preview-card-title">💚 라이프 데이터</div>
+              <div class="preview-bar-item"><span class="preview-bar-label">📱 스마트폰</span><div class="preview-bar-track"><div class="preview-bar-fill" style="width:57%;background:#334155"></div></div></div>
+              <div class="preview-bar-item"><span class="preview-bar-label">📷 인스타</span><div class="preview-bar-track"><div class="preview-bar-fill" style="width:40%;background:#EC4899"></div></div></div>
+              <div class="preview-bar-item"><span class="preview-bar-label">📺 유튜브</span><div class="preview-bar-track"><div class="preview-bar-fill" style="width:28%;background:#EF4444"></div></div></div>
+            </div>
+            <div class="preview-card">
+              <div class="preview-card-title">🧠 AI 인사이트</div>
+              <div class="preview-insight"><div class="preview-insight-label">💡 패턴 발견</div><div class="preview-insight-text">최근 "조급함" 키워드 38% 증가.</div></div>
+              <div class="preview-insight"><div class="preview-insight-label">🎯 행동 패턴</div><div class="preview-insight-text">스마트폰 5시간+ 다음날 번아웃 76%.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PAIN -->
+<section class="section section-center">
+  <div class="section-badge">😤 공감되시나요?</div>
+  <h2>AI에게 매번<br>나를 설명하고 있나요?</h2>
+  <p class="section-sub">대화창을 새로 열 때마다, 모델을 바꿀 때마다 반복되는 자기소개. 이제 그만해도 됩니다.</p>
+  <div class="pain-grid">
+    <div class="pain-card fade-up"><div class="pain-num">01</div><div class="pain-title">매번 반복되는 자기소개</div><div class="pain-desc">새 대화창을 열 때마다 직업, 성격, 고민을 처음부터 설명해야 하는 구조적 한계.</div><div class="pain-quote">"저는 마케팅 취준생이고, 심리학 전공이고, 공모전 준비 중인데..."</div></div>
+    <div class="pain-card fade-up"><div class="pain-num">02</div><div class="pain-title">모델 전환 시 맥락 단절</div><div class="pain-desc">ChatGPT에서 Claude로 바꾸는 순간 모든 대화 맥락이 사라집니다. 다시 처음부터.</div><div class="pain-quote">"GPT에서 3달 쌓은 대화를 Claude에서 쓸 수 없어요."</div></div>
+    <div class="pain-card fade-up"><div class="pain-num">03</div><div class="pain-title">10개 앱에 파편화된 기록</div><div class="pain-desc">일기는 노션, 일정은 캘린더, 할 일은 투두이스트... AI는 아무것도 연결 못 합니다.</div><div class="pain-quote">"내 삶의 데이터가 다 따로 놀아요."</div></div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section section-center features-bg" id="features">
+  <div class="section-badge">✨ 핵심 기능</div>
+  <h2>기억하는 AI,<br>처음으로 가능해집니다</h2>
+  <p class="section-sub">일기·캘린더·할 일이 벡터 DB에 통합 저장되어, AI가 당신의 시간 흐름을 이해합니다.</p>
+  <div class="feature-grid">
+    <div class="feature-card fade-up"><div class="feature-icon">🔒</div><div class="feature-title">데이터 주권</div><div class="feature-desc">당신의 기록은 당신 소유입니다. 마크다운 기반 개방형 구조로 언제든 내보내고 이동할 수 있어요.</div><span class="feature-tag">벡터 DB · 마크다운</span></div>
+    <div class="feature-card fade-up"><div class="feature-icon">🔀</div><div class="feature-title">모델 자유 전환</div><div class="feature-desc">ChatGPT, Claude, Gemini 어떤 LLM이든 같은 맥락으로 대화합니다.</div><span class="feature-tag">GPT · Claude · Gemini</span></div>
+    <div class="feature-card fade-up"><div class="feature-icon">⏳</div><div class="feature-title">시간 축 이해</div><div class="feature-desc">3개월 전 감정 패턴, 지난달 행동 습관을 AI가 분석합니다.</div><span class="feature-tag">장기 기억 · 패턴 분석</span></div>
+    <div class="feature-card fade-up"><div class="feature-icon">🧩</div><div class="feature-title">멀티 데이터 통합</div><div class="feature-desc">일기, 캘린더, 할 일, 스마트폰 사용시간, 지출 데이터까지 하나의 맥락으로 연결됩니다.</div><span class="feature-tag">일기 · 일정 · 할일 · 라이프</span></div>
+    <div class="feature-card fade-up"><div class="feature-icon">💬</div><div class="feature-title">과거 기억 대화</div><div class="feature-desc">"내가 3월에 어떤 고민을 했어?"를 물으면 AI가 과거 일기를 찾아 답합니다.</div><span class="feature-tag">RAG · 시맨틱 검색</span></div>
+    <div class="feature-card fade-up"><div class="feature-icon">📊</div><div class="feature-title">AI 심리 인사이트</div><div class="feature-desc">감정 추이, 키워드 패턴, 행동과 감정의 상관관계를 시각화해 깊은 자기 이해를 도와줍니다.</div><span class="feature-tag">감정 분석 · 인사이트</span></div>
+  </div>
+</section>
+
+<!-- COMPARE -->
+<section class="section section-center" id="compare">
+  <div class="section-badge">⚖️ 비교</div>
+  <h2>왜 EGO AI인가요?</h2>
+  <p class="section-sub">기존 도구들이 해결하지 못한 문제를 EGO AI가 처음으로 해결합니다.</p>
+  <div class="compare-wrap fade-up">
+    <table>
+      <thead><tr><th>기능</th><th class="ego">🧠 EGO AI</th><th>ChatGPT Memory</th><th>Notion AI</th></tr></thead>
+      <tbody>
+        <tr><td>장기 기억</td><td class="ego-cell check">✓</td><td class="check">✓</td><td class="cross">✗</td></tr>
+        <tr><td>모델 자유 전환</td><td class="ego-cell check">✓</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>데이터 주권 보장</td><td class="ego-cell check">✓</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>멀티 데이터 통합</td><td class="ego-cell check">✓</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>시간 축 감정 분석</td><td class="ego-cell check">✓</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>오픈 구조 내보내기</td><td class="ego-cell check">✓</td><td class="cross">✗</td><td class="check">✓</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- HOW -->
+<section class="section section-center" id="how" style="background:linear-gradient(160deg,#f0f9ff,#f8fafc);">
+  <div class="section-badge">🚀 사용법</div>
+  <h2>3단계로 시작하세요</h2>
+  <p class="section-sub">복잡한 설정 없이, 기록하는 것만으로 AI가 나를 이해하기 시작합니다.</p>
+  <div class="steps">
+    <div class="step fade-up"><div class="step-num">1</div><div class="step-title">기록 연결</div><div class="step-desc">일기, 일정, 할 일을 EGO에 연결하세요. 노션·옵시디언 가져오기도 지원합니다.</div></div>
+    <div class="step fade-up"><div class="step-num">2</div><div class="step-title">AI가 학습</div><div class="step-desc">벡터 DB에 저장된 기록을 AI가 분석하여 당신의 패턴과 맥락을 이해합니다.</div></div>
+    <div class="step fade-up"><div class="step-num">3</div><div class="step-title">대화 시작</div><div class="step-desc">어떤 LLM으로도 같은 맥락의 대화를. "내가 요즘 왜 번아웃인 것 같아?"를 물어보세요.</div></div>
+  </div>
+  <div style="margin-top:56px;">
+    <button class="btn-primary" style="font-size:16px;padding:16px 40px;" onclick="openBetaModal()">베타 신청하기 →</button>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">🧠 EGO AI</div>
+  <div class="footer-copy">© 2026 EGO AI. All rights reserved.</div>
+  <div class="footer-links"><a href="#">개인정보처리방침</a><a href="#">이용약관</a><a href="#">문의하기</a></div>
+</footer>
+
+<script>
+// APP MODAL
+function openAppModal(){
+  document.getElementById('appModal').classList.add('open');
+  document.body.style.overflow='hidden';
+  setTimeout(initAppCharts,100);
+}
+function closeAppModal(){
+  document.getElementById('appModal').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+// BETA MODAL
+function openBetaModal(e){
+  if(e)e.preventDefault();
+  document.getElementById('betaModal').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeBetaModal(){
+  document.getElementById('betaModal').classList.remove('open');
+  document.body.style.overflow='';
+  resetForm();
+}
+
+// OVERLAY CLICK
+document.getElementById('appModal').addEventListener('click',function(e){if(e.target===this)closeAppModal();});
+document.getElementById('betaModal').addEventListener('click',function(e){if(e.target===this)closeBetaModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAppModal();closeBetaModal();}});
+
+// APP VIEW SWITCH
+function switchAppView(view, el){
+  document.querySelectorAll('.app-view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.app-nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('app-'+view).classList.add('active');
+  if(el)el.classList.add('active');
+  const titles={dashboard:['오늘 한눈에','2026년 4월 30일 · 모든 기록이 한 화면에'],chat:['대화','당신의 모든 기록을 기억하는 AI'],diary:['일기','오늘의 생각과 감정을 기록하세요'],todos:['할일','목표를 향한 한 걸음씩'],analytics:['인사이트','AI가 분석한 당신의 패턴'],lifedata:['라이프 데이터','스마트폰·지출·운동 통합 분석']};
+  document.getElementById('appTitle').textContent=titles[view][0];
+  document.getElementById('appSub').textContent=titles[view][1];
+  if(view==='analytics'||view==='lifedata')setTimeout(initAppCharts,100);
+}
+
+// APP CHAT
+function sendAppChat(){
+  const inp=document.getElementById('appChatInput');
+  const text=inp.value.trim();if(!text)return;
+  const msgs=document.getElementById('appChatMsgs');
+  msgs.innerHTML+=`<div class="chat-msg user"><div class="chat-msg-role">👤 지수</div><div class="chat-msg-content">${text}</div></div>`;
+  inp.value='';
+  setTimeout(()=>{
+    const q=text.toLowerCase();
+    let res='지수님의 기록을 살펴봤어요. 더 구체적으로 물어보세요!';
+    if(q.includes('감정')||q.includes('기분'))res='최근 30일 평균 감정 점수는 3.2/5예요. 운동한 다음날 긍정 감정이 회복되는 패턴이 있어요!';
+    if(q.includes('공모전'))res='4월 25일 일기에서 제일기획 공모전 아이디어가 채택됐다고 기록되어 있어요. 5월 10일 1차 마감이에요!';
+    if(q.includes('번아웃'))res='스마트폰 5시간+ 사용일 다음날 번아웃 표현이 76% 등장해요. 오늘 사용시간을 체크해보세요.';
+    msgs.innerHTML+=`<div class="chat-msg ai"><div class="chat-msg-role">🧠 Ego AI</div><div class="chat-msg-content">${res}</div></div>`;
+    msgs.scrollTop=msgs.scrollHeight;
+  },800);
+}
+
+// APP CHARTS
+let appChartsInit=false;
+function initAppCharts(){
+  if(appChartsInit)return;
+  appChartsInit=true;
+  const mc=document.getElementById('inlineMoodChart');
+  if(mc&&!mc._chart)mc._chart=new Chart(mc,{type:'line',data:{labels:['4/1','4/10','4/15','4/20','4/25','4/29'],datasets:[{data:[4,5,3,2,5,2],borderColor:'#334155',backgroundColor:'rgba(51,65,85,0.1)',tension:.4,fill:true,pointRadius:3,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false,min:0,max:5}}}});
+  const ec=document.getElementById('inlineEntryChart');
+  if(ec&&!ec._chart)ec._chart=new Chart(ec,{type:'bar',data:{labels:['1주','2주','3주','4주','5주'],datasets:[{data:[2,3,3,3,1],backgroundColor:'rgba(51,65,85,0.7)',borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,display:false}}}});
+  const pc=document.getElementById('inlinePhoneChart');
+  if(pc&&!pc._chart)pc._chart=new Chart(pc,{type:'line',data:{labels:['월','화','수','목','금','토','일'],datasets:[{data:[5.2,4.8,5.5,3.9,4.5,6.2,4.5],borderColor:'#334155',backgroundColor:'rgba(51,65,85,0.1)',tension:.4,fill:true,pointRadius:3,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:8,ticks:{callback:v=>v+'h'}}}}});
+}
+
+// BETA FORM
+document.querySelectorAll('#situation .form-option,#currentApp .form-option,#source .form-option').forEach(opt=>{
+  opt.addEventListener('click',function(){this.closest('.form-options').querySelectorAll('.form-option').forEach(o=>o.classList.remove('selected'));this.classList.add('selected');});
+});
+document.querySelectorAll('#painpoint .form-option,#feature .form-option').forEach(opt=>{
+  opt.addEventListener('click',function(){this.classList.toggle('selected');});
+});
+
+function submitBeta(){
+  const name=document.getElementById('f-name').value.trim();
+  const email=document.getElementById('f-email').value.trim();
+  if(!name){alert('이름을 입력해주세요.');return;}
+  if(!email||!email.includes('@')){alert('올바른 이메일을 입력해주세요.');return;}
+  window.open('https://tally.so/r/2E1Ov9','_blank');
+  document.getElementById('betaForm').style.display='none';
+  document.getElementById('confirmedEmail').textContent=email;
+  document.getElementById('successPanel').classList.add('show');
+}
+
+function resetForm(){
+  document.getElementById('betaForm').style.display='block';
+  document.getElementById('successPanel').classList.remove('show');
+  document.getElementById('f-name').value='';
+  document.getElementById('f-email').value='';
+  document.querySelectorAll('.form-option').forEach(o=>o.classList.remove('selected'));
+}
+
+// FADE-UP
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}});},{threshold:.12});
+document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>
